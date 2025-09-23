@@ -1,0 +1,752 @@
+Usage
+Run the main script with different algorithms:
+
+# Run BFS on small map
+python main.py --algorithm bfs --map test_maps/small.map
+
+# Run A* on medium map
+python main.py --algorithm astar --map test_maps/medium.map
+
+# Run Hill-climbing on large map
+python main.py --algorithm hillclimb --map test_maps/large.map
+
+# Run with dynamic obstacles
+python main.py --algorithm astar --map test_maps/dynamic.map --dynamic
+
+Map Format
+Maps are text files with the following format:
+
+First line: grid dimensions (rows columns)
+
+Second line: start position (row column)
+
+Third line: goal position (row column)
+
+Following lines: grid cells where:
+
+'0': obstacle (impassable)
+
+'1'-'9': terrain with movement cost 1-9
+
+'S': start position
+
+'G': goal position
+
+Algorithms
+BFS/Uniform-cost: Explores all paths uniformly, optimal for finding shortest path
+
+A*: Uses heuristic to guide search, optimal and efficient with admissible heuristic
+
+Hill-climbing with random restarts: Local search that can adapt to dynamic changes
+
+Results
+The program outputs:
+
+Path cost
+
+Number of nodes expanded
+
+Execution time
+
+Visualization of the path (optional)
+
+## 3. environment.py
+
+```python
+"""
+Grid environment for the autonomous delivery agent.
+Handles static obstacles, terrain costs, and dynamic obstacles.
+"""
+
+import numpy as np
+from typing import List, Tuple, Dict, Set, Optional
+
+class GridEnvironment:
+    """
+    Represents a 2D grid environment with obstacles, terrain costs, and dynamic obstacles.
+    """
+    
+    def __init__(self, grid: np.ndarray, start: Tuple[int, int], goal: Tuple[int, int]):
+        """
+        Initialize the grid environment.
+        
+        Args:
+            grid: 2D numpy array where values represent terrain costs (0 = obstacle)
+            start: (row, col) starting position
+            goal: (row, col) goal position
+        """
+        self.grid = grid
+        self.rows, self.cols = grid.shape
+        self.start = start
+        self.goal = goal
+        
+        # Dynamic obstacles: dict of time -> set of positions
+        self.dynamic_obstacles = {}
+        
+        # Movement directions (4-connected)
+        self.directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # up, down, left, right
+    
+    def add_dynamic_obstacle(self, positions: List[Tuple[int, int]], start_time: int = 0):
+        """
+        Add a dynamic obstacle that moves through a sequence of positions.
+        
+        Args:
+            positions: List of (row, col) positions the obstacle occupies at each time step
+            start_time: Time step when the obstacle first appears
+        """
+        for i, pos in enumerate(positions):
+            time_step = start_time + i
+            if time_step not in self.dynamic_obstacles:
+                self.dynamic_obstacles[time_step] = set()
+            self.dynamic_obstacles[time_step].add(pos)
+    
+    def is_valid_position(self, pos: Tuple[int, int], time: int = 0) -> bool:
+        """
+        Check if a position is valid (within bounds, not an obstacle, not occupied by dynamic obstacle).
+        
+        Args:
+            pos: (row, col) position to check
+            time: Current time step (for dynamic obstacles)
+            
+        Returns:
+            True if position is valid, False otherwise
+        """
+        row, col = pos
+        
+        # Check bounds
+        if row < 0 or row >= self.rows or col < 0 or col >= self.cols:
+            return False
+        
+        # Check static obstacle
+        if self.grid[row, col] == 0:
+            return False
+        
+        # Check dynamic obstacle
+        if time in self.dynamic_obstacles and pos in self.dynamic_obstacles[time]:
+            return False
+        
+        return True
+    
+    def get_terrain_cost(self, pos: Tuple[int, int]) -> int:
+        """
+        Get the terrain cost for a position.
+        
+        Args:
+            pos: (row, col) position
+            
+        Returns:
+            Terrain cost (1-9 for valid terrain, 0 for obstacles)
+        """
+        row, col = pos
+        return self.grid[row, col]
+    
+    def get_neighbors(self, pos: Tuple[int, int], time: int = 0) -> List[Tuple[Tuple[int, int], int]]:
+        """
+        Get valid neighboring positions and their movement costs.
+        
+        Args:
+            pos: Current (row, col) position
+            time: Current time step
+            
+        Returns:
+            List of (neighbor_position, movement_cost) tuples
+        """
+        row, col = pos
+        neighbors = []
+        
+        for dr, dc in self.directions:
+            new_pos = (row + dr, col + dc)
+            
+            if self.is_valid_position(new_pos, time):
+                # Cost to move to neighbor is the terrain cost of the neighbor
+                cost = self.get_terrain_cost(new_pos)
+                neighbors.append((new_pos, cost))
+        
+        return neighbors
+    
+    def manhattan_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
+        """
+        Calculate Manhattan distance between two positions.
+        
+        Args:
+            pos1: First (row, col) position
+            pos2: Second (row, col) position
+            
+        Returns:
+            Manhattan distance
+        """
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+    
+    def euclidean_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
+        """
+        Calculate Euclidean distance between two positions.
+        
+        Args:
+            pos1: First (row, col) position
+            pos2: Second (row, col) position
+            
+        Returns:
+            Euclidean distance
+        """
+        return ((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)**0.5
+    
+    def visualize(self, path: List[Tuple[int, int]] = None, time: int = 0):
+        """
+        Visualize the grid environment with optional path.
+        
+        Args:
+            path: List of positions representing the path
+            time: Time step for dynamic obstacles
+        """
+        import matplotlib.pyplot as plt
+        from matplotlib.colors import ListedColormap
+        
+        # Create a visualization grid
+        vis_grid = np.copy(self.grid)
+        
+        # Mark obstacles as -1
+        vis_grid[vis_grid == 0] = -1
+        
+        # Mark dynamic obstacles at this time
+        if time in self.dynamic_obstacles:
+            for pos in self.dynamic_obstacles[time]:
+                vis_grid[pos] = -2
+        
+        # Mark start and goal
+        vis_grid[self.start] = 10
+        vis_grid[self.goal] = 11
+        
+        # Mark path if provided
+        if path:
+            for pos in path[1:-1]:  # Exclude start and goal
+                vis_grid[pos] = 12
+        
+        # Create custom colormap
+        cmap = ListedColormap(['black', 'white', 'red', 'green', 'blue', 'yellow'])
+        
+        plt.figure(figsize=(10, 8))
+        plt.imshow(vis_grid, cmap=cmap, vmin=-2, vmax=12)
+        
+        # Add colorbar with labels
+        cbar = plt.colorbar(ticks=[-2, -1, 1, 10, 11, 12])
+        cbar.ax.set_yticklabels(['Dynamic Obstacle', 'Static Obstacle', 'Terrain', 
+                                'Start', 'Goal', 'Path'])
+        
+        plt.title(f"Grid Environment (Time: {time})")
+        plt.show()
+##4.agents.py
+"""
+Pathfinding agents for the autonomous delivery agent.
+Implements BFS, A*, and Hill-climbing algorithms.
+"""
+
+import heapq
+import time
+import random
+from typing import List, Tuple, Dict, Set, Optional
+from environment import GridEnvironment
+
+class PathfindingAgent:
+    """Base class for pathfinding agents."""
+    
+    def __init__(self, environment: GridEnvironment):
+        self.env = environment
+        self.nodes_expanded = 0
+    
+    def find_path(self, start: Tuple[int, int], goal: Tuple[int, int], 
+                  start_time: int = 0) -> Tuple[List[Tuple[int, int]], int, int]:
+        """
+        Find a path from start to goal.
+        
+        Args:
+            start: Starting position
+            goal: Goal position
+            start_time: Starting time step
+            
+        Returns:
+            Tuple of (path, total_cost, nodes_expanded)
+        """
+        raise NotImplementedError("Subclasses must implement find_path")
+    
+    def reconstruct_path(self, came_from: Dict, current: Tuple[int, int]) -> List[Tuple[int, int]]:
+        """Reconstruct path from came_from dictionary."""
+        path = [current]
+        while current in came_from:
+            current = came_from[current]
+            path.append(current)
+        path.reverse()
+        return path
+
+class BFSAgent(PathfindingAgent):
+    """Breadth-First Search agent (uniform-cost)."""
+    
+    def find_path(self, start: Tuple[int, int], goal: Tuple[int, int], 
+                  start_time: int = 0) -> Tuple[List[Tuple[int, int]], int, int]:
+        self.nodes_expanded = 0
+        
+        # Priority queue: (cost, time, position)
+        frontier = [(0, start_time, start)]
+        came_from = {start: None}
+        cost_so_far = {start: 0}
+        
+        while frontier:
+            # Get node with lowest cost
+            current_cost, current_time, current_pos = heapq.heappop(frontier)
+            self.nodes_expanded += 1
+            
+            if current_pos == goal:
+                path = self.reconstruct_path(came_from, current_pos)
+                return path, current_cost, self.nodes_expanded
+            
+            # Explore neighbors
+            for next_pos, move_cost in self.env.get_neighbors(current_pos, current_time):
+                new_cost = current_cost + move_cost
+                new_time = current_time + 1
+                
+                if next_pos not in cost_so_far or new_cost < cost_so_far[next_pos]:
+                    cost_so_far[next_pos] = new_cost
+                    heapq.heappush(frontier, (new_cost, new_time, next_pos))
+                    came_from[next_pos] = current_pos
+        
+        return [], float('inf'), self.nodes_expanded  # No path found
+
+class AStarAgent(PathfindingAgent):
+    """A* Search agent with admissible heuristic."""
+    
+    def find_path(self, start: Tuple[int, int], goal: Tuple[int, int], 
+                  start_time: int = 0) -> Tuple[List[Tuple[int, int]], int, int]:
+        self.nodes_expanded = 0
+        
+        # Priority queue: (f_cost, time, position)
+        frontier = [(self.heuristic(start, goal), start_time, start)]
+        came_from = {start: None}
+        cost_so_far = {start: 0}
+        
+        while frontier:
+            # Get node with lowest f-cost
+            f_cost, current_time, current_pos = heapq.heappop(frontier)
+            self.nodes_expanded += 1
+            
+            if current_pos == goal:
+                path = self.reconstruct_path(came_from, current_pos)
+                return path, cost_so_far[current_pos], self.nodes_expanded
+            
+            # Explore neighbors
+            for next_pos, move_cost in self.env.get_neighbors(current_pos, current_time):
+                new_cost = cost_so_far[current_pos] + move_cost
+                
+                if next_pos not in cost_so_far or new_cost < cost_so_far[next_pos]:
+                    cost_so_far[next_pos] = new_cost
+                    priority = new_cost + self.heuristic(next_pos, goal)
+                    heapq.heappush(frontier, (priority, current_time + 1, next_pos))
+                    came_from[next_pos] = current_pos
+        
+        return [], float('inf'), self.nodes_expanded  # No path found
+    
+    def heuristic(self, pos: Tuple[int, int], goal: Tuple[int, int]) -> int:
+        """Admissible heuristic: Manhattan distance multiplied by minimum terrain cost."""
+        min_terrain_cost = 1  # Minimum terrain cost in the environment
+        return self.env.manhattan_distance(pos, goal) * min_terrain_cost
+
+class HillClimbingAgent(PathfindingAgent):
+    """Hill-climbing agent with random restarts for local search."""
+    
+    def __init__(self, environment: GridEnvironment, max_restarts: int = 10, max_steps: int = 1000):
+        super().__init__(environment)
+        self.max_restarts = max_restarts
+        self.max_steps = max_steps
+    
+    def find_path(self, start: Tuple[int, int], goal: Tuple[int, int], 
+                  start_time: int = 0) -> Tuple[List[Tuple[int, int]], int, int]:
+        self.nodes_expanded = 0
+        best_path = []
+        best_cost = float('inf')
+        
+        for restart in range(self.max_restarts):
+            path, cost, nodes = self.hill_climb(start, goal, start_time)
+            self.nodes_expanded += nodes
+            
+            if cost < best_cost:
+                best_path, best_cost = path, cost
+            
+            # Early termination if optimal path found
+            if best_cost == self.env.manhattan_distance(start, goal):
+                break
+        
+        return best_path, best_cost, self.nodes_expanded
+    
+    def hill_climb(self, start: Tuple[int, int], goal: Tuple[int, int], 
+                   start_time: int = 0) -> Tuple[List[Tuple[int, int]], int, int]:
+        """Perform a single hill-climbing run."""
+        current_pos = start
+        current_time = start_time
+        path = [start]
+        total_cost = 0
+        nodes_expanded = 0
+        
+        for step in range(self.max_steps):
+            if current_pos == goal:
+                return path, total_cost, nodes_expanded
+            
+            # Get all possible next moves
+            neighbors = self.env.get_neighbors(current_pos, current_time)
+            if not neighbors:
+                break  # No valid moves
+            
+            # Evaluate neighbors by heuristic (distance to goal)
+            neighbor_scores = []
+            for neighbor, move_cost in neighbors:
+                score = self.env.manhattan_distance(neighbor, goal)
+                neighbor_scores.append((score, move_cost, neighbor))
+            
+            # Sort by heuristic score (lower is better)
+            neighbor_scores.sort(key=lambda x: x[0])
+            
+            # Choose the best neighbor (steepest ascent)
+            best_score, best_cost, best_neighbor = neighbor_scores[0]
+            
+            # With small probability, choose a random neighbor (to escape local optima)
+            if random.random() < 0.1:  # 10% chance of random move
+                random_neighbor = random.choice(neighbor_scores)
+                best_score, best_cost, best_neighbor = random_neighbor
+            
+            # Move to chosen neighbor
+            current_pos = best_neighbor
+            current_time += 1
+            total_cost += best_cost
+            path.append(current_pos)
+            nodes_expanded += 1
+        
+        return path, total_cost, nodes_expanded
+
+class DynamicReplanningAgent:
+    """Agent that can replan when dynamic obstacles appear."""
+    
+    def __init__(self, base_agent: PathfindingAgent):
+        self.base_agent = base_agent
+        self.env = base_agent.env
+    
+    def execute_with_replanning(self, start: Tuple[int, int], goal: Tuple[int, int], 
+                               max_time: int = 100) -> Tuple[List[Tuple[int, int]], int, int, int]:
+        """
+        Execute path with replanning when dynamic obstacles are encountered.
+        
+        Args:
+            start: Starting position
+            goal: Goal position
+            max_time: Maximum time steps to execute
+            
+        Returns:
+            Tuple of (path, total_cost, nodes_expanded, replan_count)
+        """
+        current_pos = start
+        current_time = 0
+        total_cost = 0
+        total_nodes_expanded = 0
+        replan_count = 0
+        full_path = [start]
+        
+        while current_pos != goal and current_time < max_time:
+            # Plan path from current position
+            path, cost, nodes = self.base_agent.find_path(current_pos, goal, current_time)
+            total_nodes_expanded += nodes
+            
+            if not path:  # No path found
+                break
+            
+            # Execute path until goal or until dynamic obstacle is encountered
+            for i in range(1, len(path)):
+                next_pos = path[i]
+                next_time = current_time + 1
+                
+                # Check if next position is valid at the time we'll arrive
+                if not self.env.is_valid_position(next_pos, next_time):
+                    # Dynamic obstacle encountered, replan
+                    replan_count += 1
+                    break
+                
+                # Move to next position
+                current_pos = next_pos
+                current_time = next_time
+                move_cost = self.env.get_terrain_cost(next_pos)
+                total_cost += move_cost
+                full_path.append(current_pos)
+                
+                if current_pos == goal:
+                    return full_path, total_cost, total_nodes_expanded, replan_count
+        
+        return full_path, total_cost, total_nodes_expanded, replan_count
+## 5. utils.py
+"""
+Utility functions for the autonomous delivery agent.
+"""
+
+import numpy as np
+from typing import List, Tuple
+from environment import GridEnvironment
+
+def load_map(filename: str) -> GridEnvironment:
+    """
+    Load a map from a text file.
+    
+    Map format:
+    - First line: rows cols
+    - Second line: start_row start_col
+    - Third line: goal_row goal_col
+    - Following lines: grid data
+    
+    Args:
+        filename: Path to the map file
+        
+    Returns:
+        GridEnvironment object
+    """
+    with open(filename, 'r') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+    
+    # Parse dimensions
+    rows, cols = map(int, lines[0].split())
+    
+    # Parse start and goal
+    start = tuple(map(int, lines[1].split()))
+    goal = tuple(map(int, lines[2].split()))
+    
+    # Parse grid data
+    grid_data = []
+    for i in range(3, 3 + rows):
+        row_data = list(map(int, lines[i].split()))
+        grid_data.append(row_data)
+    
+    grid = np.array(grid_data)
+    
+    return GridEnvironment(grid, start, goal)
+
+def create_test_maps():
+    """Create test maps for the project."""
+    
+    # Small map (10x10)
+    small_grid = np.ones((10, 10), dtype=int)
+    # Add some obstacles
+    small_grid[3, 3:7] = 0
+    small_grid[6, 2:8] = 0
+    # Add varying terrain
+    small_grid[0:3, 7:10] = 2
+    small_grid[7:10, 0:3] = 3
+    
+    small_env = GridEnvironment(small_grid, (0, 0), (9, 9))
+    
+    # Medium map (20x20)
+    medium_grid = np.ones((20, 20), dtype=int)
+    # Add more complex obstacles
+    for i in range(5, 15):
+        medium_grid[i, 10] = 0
+    for j in range(5, 15):
+        medium_grid[10, j] = 0
+    # Add varying terrain
+    medium_grid[0:10, 0:10] = 2
+    medium_grid[10:20, 10:20] = 3
+    medium_grid[15:20, 0:5] = 4
+    
+    medium_env = GridEnvironment(medium_grid, (0, 0), (19, 19))
+    
+    # Large map (30x30)
+    large_grid = np.ones((30, 30), dtype=int)
+    # Add maze-like obstacles
+    for i in range(1, 29, 3):
+        large_grid[i, 1:29] = 0
+        large_grid[i, 1:29:4] = 1  # Openings in the walls
+    
+    large_env = GridEnvironment(large_grid, (0, 0), (29, 29))
+    
+    # Dynamic map (15x15 with moving obstacles)
+    dynamic_grid = np.ones((15, 15), dtype=int)
+    dynamic_env = GridEnvironment(dynamic_grid, (0, 0), (14, 14))
+    
+    # Add a dynamic obstacle that moves horizontally
+    obstacle_path = []
+    for i in range(15):
+        obstacle_path.append((7, i))
+    for i in range(14, -1, -1):
+        obstacle_path.append((7, i))
+    
+    dynamic_env.add_dynamic_obstacle(obstacle_path)
+    
+    return {
+        'small': small_env,
+        'medium': medium_env,
+        'large': large_env,
+        'dynamic': dynamic_env
+    }
+
+def save_map(environment: GridEnvironment, filename: str):
+    """
+    Save a map to a text file.
+    
+    Args:
+        environment: GridEnvironment to save
+        filename: Path to save the map
+    """
+    with open(filename, 'w') as f:
+        # Write dimensions
+        f.write(f"{environment.rows} {environment.cols}\n")
+        
+        # Write start and goal
+        f.write(f"{environment.start[0]} {environment.start[1]}\n")
+        f.write(f"{environment.goal[0]} {environment.goal[1]}\n")
+        
+        # Write grid
+        for i in range(environment.rows):
+            row = ' '.join(str(environment.grid[i, j]) for j in range(environment.cols))
+            f.write(row + '\n')
+
+def print_results(algorithm: str, path: List[Tuple[int, int]], cost: int, 
+                 nodes_expanded: int, time_taken: float, replan_count: int = None):
+    """Print results in a formatted way."""
+    print(f"\n=== {algorithm} Results ===")
+    print(f"Path length: {len(path)} steps")
+    print(f"Total cost: {cost}")
+    print(f"Nodes expanded: {nodes_expanded}")
+    print(f"Time taken: {time_taken:.4f} seconds")
+    if replan_count is not None:
+        print(f"Replanning events: {replan_count}")
+    
+    if path:
+        print(f"Path: {path[:5]}...{path[-5:]}" if len(path) > 10 else f"Path: {path}")
+    else:
+        print("No path found!")
+##6. main.py
+"""
+Main script for the autonomous delivery agent project.
+"""
+
+import argparse
+import time
+import os
+from typing import Dict, Any
+
+from environment import GridEnvironment
+from agents import BFSAgent, AStarAgent, HillClimbingAgent, DynamicReplanningAgent
+from utils import load_map, create_test_maps, save_map, print_results
+
+def run_experiment(environment: GridEnvironment, algorithm: str, dynamic: bool = False) -> Dict[str, Any]:
+    """
+    Run a pathfinding experiment with the given algorithm.
+    
+    Args:
+        environment: Grid environment
+        algorithm: Algorithm name ('bfs', 'astar', 'hillclimb')
+        dynamic: Whether to use dynamic replanning
+        
+    Returns:
+        Dictionary with results
+    """
+    # Create agent based on algorithm
+    if algorithm == 'bfs':
+        agent = BFSAgent(environment)
+    elif algorithm == 'astar':
+        agent = AStarAgent(environment)
+    elif algorithm == 'hillclimb':
+        agent = HillClimbingAgent(environment)
+    else:
+        raise ValueError(f"Unknown algorithm: {algorithm}")
+    
+    # Use dynamic replanning if requested
+    if dynamic:
+        agent = DynamicReplanningAgent(agent)
+    
+    # Time the pathfinding
+    start_time = time.time()
+    
+    if dynamic:
+        path, cost, nodes_expanded, replan_count = agent.execute_with_replanning(
+            environment.start, environment.goal)
+    else:
+        path, cost, nodes_expanded = agent.find_path(environment.start, environment.goal)
+        replan_count = 0
+    
+    end_time = time.time()
+    time_taken = end_time - start_time
+    
+    return {
+        'algorithm': algorithm.upper(),
+        'path': path,
+        'cost': cost,
+        'nodes_expanded': nodes_expanded,
+        'time_taken': time_taken,
+        'replan_count': replan_count,
+        'success': len(path) > 0 and path[-1] == environment.goal
+    }
+
+def main():
+    parser = argparse.ArgumentParser(description='Autonomous Delivery Agent')
+    parser.add_argument('--algorithm', '-a', choices=['bfs', 'astar', 'hillclimb'], 
+                       default='astar', help='Pathfinding algorithm to use')
+    parser.add_argument('--map', '-m', type=str, help='Path to map file')
+    parser.add_argument('--dynamic', '-d', action='store_true', 
+                       help='Use dynamic replanning')
+    parser.add_argument('--visualize', '-v', action='store_true', 
+                       help='Visualize the path')
+    parser.add_argument('--compare', '-c', action='store_true', 
+                       help='Compare all algorithms')
+    parser.add_argument('--create-maps', action='store_true', 
+                       help='Create test maps')
+    
+    args = parser.parse_args()
+    
+    # Create test maps if requested
+    if args.create_maps:
+        print("Creating test maps...")
+        test_maps = create_test_maps()
+        os.makedirs('test_maps', exist_ok=True)
+        
+        for name, env in test_maps.items():
+            filename = f'test_maps/{name}.map'
+            save_map(env, filename)
+            print(f"Created {filename}")
+        
+        print("Test maps created successfully!")
+        return
+    
+    # Load environment
+    if args.map:
+        environment = load_map(args.map)
+    else:
+        # Use default small map
+        test_maps = create_test_maps()
+        environment = test_maps['small']
+    
+    # Run experiment
+    if args.compare:
+        print("Comparing all algorithms...")
+        algorithms = ['bfs', 'astar', 'hillclimb']
+        
+        for algo in algorithms:
+            result = run_experiment(environment, algo, args.dynamic)
+            print_results(
+                result['algorithm'],
+                result['path'],
+                result['cost'],
+                result['nodes_expanded'],
+                result['time_taken'],
+                result['replan_count']
+            )
+            
+            # Visualize the first result
+            if algo == algorithms[0] and args.visualize and result['success']:
+                environment.visualize(result['path'])
+    else:
+        result = run_experiment(environment, args.algorithm, args.dynamic)
+        print_results(
+            result['algorithm'],
+            result['path'],
+            result['cost'],
+            result['nodes_expanded'],
+            result['time_taken'],
+            result['replan_count']
+        )
+        
+        if args.visualize and result['success']:
+            environment.visualize(result['path'])
+
+if __name__ == "__main__":
+    main()
