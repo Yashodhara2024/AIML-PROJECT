@@ -37,7 +37,7 @@ You can install the required libraries using pip:
 pip install numpy matplotlib ipython
 
 2. Running the Project
-The project is designed to be run from the command line. Navigate to the project's directory and execute the main script.
+The project is designed to be run from the command line. Navigate to the project's directory and execute the main script:
 python main.py
 
 Running this command will:
