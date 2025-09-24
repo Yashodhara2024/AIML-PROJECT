@@ -1,93 +1,82 @@
-Autonomous Delivery Agent: AI Pathfinding in a 2D Grid
-This project implements an autonomous delivery agent that navigates a 2D grid city to deliver packages efficiently. The agent must model its environment, choose rational actions to maximize delivery efficiency, and handle dynamic obstacles by replanning its route.
+Autonomous Delivery Agent Project
 
-#Features
+This project implements an autonomous delivery agent that navigates a 2D grid environment. The agent's core task is to efficiently deliver packages by planning optimal paths while contending with varying terrain costs and dynamic obstacles. The project serves as a comprehensive case study in artificial intelligence, covering uninformed, informed, and local search algorithms.
 
-Environment Modeling: The agent operates within a 2D grid environment that supports static obstacles, varying terrain costs, and dynamic moving obstacles.
+Key Features 
+Modular Environment Model: A GridEnvironment class that supports static obstacles, dynamic (moving) obstacles, and variable terrain costs.
 
-Multiple Pathfinding Algorithms: The project includes implementations of:
+Intelligent Agent Design: A DeliveryAgent class that plans and executes paths, demonstrating rational decision-making. It also includes a robust dynamic replanning mechanism.
+
+Diverse Pathfinding Algorithms: The project provides implementations of several search algorithms for comparative analysis:
 
 Uninformed Search: Breadth-First Search (BFS) and Uniform-Cost Search (UCS).
 
-Informed Search: A* with an admissible heuristic (Manhattan distance).
+Informed Search: A* with an admissible Manhattan distance heuristic.
 
-Local Search: Hill Climbing with Random Restarts, designed for dynamic replanning.
+Local Search: Hill Climbing with Random Restarts, specifically for fast replanning.
 
-Dynamic Replanning: The agent is capable of replanning its path in real-time when it encounters unexpected obstacles or changes in the environment.
+Automated Experiments: A framework to run experiments on four distinct test maps (small, medium, large, and dynamic) and analyze algorithm performance based on path cost, time, and nodes expanded.
 
-Experimental Analysis: The project includes a framework to compare the performance of each algorithm on different map instances, measuring metrics such as path cost, nodes expanded, and computation time.
+Proof-of-Concept: A built-in demonstration of dynamic replanning to show the agent's ability to adapt to sudden changes in the environment.
 
-Reproducibility: The code is structured to ensure test maps and results can be easily reproduced.
+Setup Instructions
+Follow these steps to set up and run the project.
 
+1. Prerequisites
+Make sure you have Python 3.6+ installed on your system. You will also need the following libraries:
 
-# How to Run the Project
-Dependencies
-This project requires the following Python libraries:
+numpy for handling numerical data and the grid map.
 
-numpy
-heapq
-matplotlib
-ipython
+matplotlib for plotting and visualizing results.
 
-You can install them using pip:
+ipython for the animation demonstration.
+
+heapq (built-in) for priority queue implementations.
+
+You can install the required libraries using pip:
 pip install numpy matplotlib ipython
-Running the Main Script
-The project is designed to be run from the command line interface (CLI). The main() function in the main.py script orchestrates the entire process: creating maps, running experiments, analyzing results, and demonstrating dynamic replanning.
 
+2. Running the Project
+The project is designed to be run from the command line. Navigate to the project's directory and execute the main script.
 python main.py
-This will:
 
-Initialize and visualize four test maps: small, medium, large, and dynamic.
+Running this command will:
+Generate and visualize the four test maps.
+Run automated experiments on all maps, comparing the performance of BFS, UCS, A*, and Hill Climbing.
+Print detailed results for each algorithm and map combination.
+Display a plot summarizing the experimental data.
+Run a dynamic replanning demonstration to show the agent's reactive behavior.
 
-Run experiments, comparing the performance of BFS, UCS, A*, and Hill Climbing on each map.
+3. Code Structure
+The source code is modular and well-documented for easy understanding:
 
-Print and plot the experimental results.
+main.py: The entry point of the application, orchestrating all functions.
 
-Display a proof-of-concept animation or log showing the agent replanning its path on a dynamic map.
+GridEnvironment: Defines the environment's properties and methods.
 
-Code Structure
+SearchAlgorithm: The base class for all search algorithms.
 
-GridEnvironment: Models the 2D grid with terrain, static obstacles, and dynamic obstacles.
+BFS, UniformCostSearch, AStarSearch, HillClimbingSearch: Implementations of each algorithm.
 
-SearchAlgorithm: The base class for all pathfinding algorithms.
+DeliveryAgent: Contains the agent's logic for planning and executing deliveries.
 
-BFS: Implements Breadth-First Search.
+Helper functions (create_test_maps, run_experiments, analyze_results, etc.) are included to manage the automated testing and analysis framework.
 
-UniformCostSearch: Implements Uniform-Cost Search.
+Grid File Format
+Although the test maps are programmatically generated for convenience and reproducibility, the underlying environment model supports a simple grid file format.
 
-AStarSearch: Implements A* with Manhattan distance heuristic.
+A grid map can be represented as a text file where each number or character corresponds to a cell's terrain cost or obstacle status. For example:
 
-HillClimbingSearch: Implements a local search strategy for replanning.
+1 1 1 1 (low cost terrain)
 
-DeliveryAgent: The core agent class responsible for planning and executing deliveries.
-
-
-create_test_maps(): Function to generate the required map instances.
-
-run_experiments(): Function to execute the performance comparison tests.
-
-analyze_results(): Function to generate plots and provide analysis of the experimental data.
-
-
-demonstrate_dynamic_replanning(): Functions for the dynamic replanning proof-of-concept.
+2 2 1 1 (mixed terrain)
 
 
-# Grid File Format
-The grid environment can be represented by a simple text file. Each character or number in the file corresponds to a grid cell.
+This format allows for the easy creation and sharing of new custom maps for additional testing.
 
 
-# or a high integer value (e.g., 9) can represent static obstacles.
 
 
-1 or other low integer values represent terrain costs.
 
-The start and goal positions can be denoted by specific characters (e.g., S for start and G for goal) or by coordinates specified in the main script.
 
-Example of a small grid map file (small_map.txt):
 
-1 1 1 1 1
-1 # # 1 1
-1 1 1 1 1
-1 1 1 1 1
-1 1 1 1 1
-This project's create_test_maps() function generates the maps programmatically for convenience, but the underlying model supports this format.
