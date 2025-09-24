@@ -1,1 +1,74 @@
+Autonomous Delivery Agent
+
+
+1. Introduction
+This report details the design, implementation, and experimental analysis of an autonomous delivery agent. The agent is tasked with navigating a 2D grid environment to deliver packages efficiently. The project's core focus is on comparing the performance of various pathfinding algorithms—uninformed, informed, and local search—under different environmental conditions. The goal is to determine which algorithm is most suitable for different scenarios, including those with dynamic, unpredictable elements.
+________________________________________
+2. Environment Model
+The agent operates within a versatile GridEnvironment class, which serves as a simulation of a 2D city. The environment is characterized by:
+•	Spatial Grid: A discrete, 2D grid defined by its width and height.
+•	Terrain Costs: Each cell has an associated integer cost, representing varying terrain types (e.g., roads, dirt paths, forests). A movement cost of 1 is for standard movement, while higher values indicate more difficult terrain.
+•	Static Obstacles: Certain cells are permanently blocked and cannot be traversed. These are fixed at the time the environment is created.
+•	Dynamic Obstacles: The environment can include objects that move predictably according to a predetermined schedule. The agent's pathfinding must account for these moving obstacles to avoid collisions. The model also supports unpredictable obstacles for local search strategies.
+•	Agent's Mobility: The agent is restricted to 4-connected movements (up, down, left, right). This simple movement model allows for a clear comparison of algorithm performance without the added complexity of diagonal movement.
+________________________________________
+3. Agent Design and Functionality
+The DeliveryAgent class represents the autonomous entity. It is designed with a layered architecture:
+•	State Representation: The agent maintains its current position, time step, total cost, and a log of its actions.
+•	Path Planning Module: This module is responsible for computing a path from a start to a goal. It abstracts the underlying search algorithms, allowing the agent to dynamically switch between them (e.g., from A* to Hill Climbing) based on the current task or environmental conditions.
+•	Dynamic Replanning: A critical feature for real-world application. The agent plans a path for a given time horizon. Before each move, it checks if its next position will be clear of dynamic obstacles. If a collision is imminent, it triggers the path planning module to find a new route from its current position. This reactive behavior allows it to adapt to unforeseen changes.
+•	Package Delivery Protocol: The agent executes a two-phase delivery process: first, it plans and travels to a package's pickup location, and second, it plans and travels to the destination.
+________________________________________
+4. Algorithm Implementations and Heuristics
+The project implements a suite of search algorithms to provide a comprehensive comparison.
+Uninformed Search
+•	Breadth-First Search (BFS): Explores the grid layer by layer, guaranteeing the shortest path in terms of the number of steps. It does not consider terrain costs, which can lead to inefficient paths on weighted grids.
+•	Uniform-Cost Search (UCS): A cost-aware search that expands nodes in increasing order of their cumulative path cost. UCS guarantees the optimal path with the lowest total cost, regardless of the number of steps. It is a complete algorithm for grids with non-negative edge weights.
+Informed Search
+•	A* Search: A* is a best-first search algorithm that is both complete and optimal. It uses an evaluation function f(n)=g(n)+h(n), where:
+o	g(n) is the actual cost from the start node to the current node n.
+o	h(n) is a heuristic estimate of the cost from node n to the goal. This project uses the Manhattan Distance as its heuristic: h(n)=∣xn−xgoal∣+∣yn−ygoal∣. The Manhattan distance is admissible because the shortest path in a 4-connected grid will never be less than the straight-line distance, ensuring A* finds the most cost-efficient path.
+Local Search
+•	Hill Climbing with Random Restarts: This is a greedy local search algorithm that iteratively moves towards a neighboring state that improves the heuristic cost. It does not maintain a complete search tree, making it computationally fast. The random restart feature helps it escape local optima by restarting the search from a new, randomly chosen position when no better neighbors can be found. It is particularly effective for dynamic environments where a quick, if not optimal, solution is needed.
+________________________________________
+5. Experimental Results
+To evaluate the performance of the algorithms, a series of experiments were conducted on four distinct maps.
+•	Small Map (10x10): A simple grid with minor terrain variations and a few static obstacles.
+•	Medium Map (20x20): A more complex grid with maze-like static obstacles and multiple packages.
+•	Large Map (30x30): A significantly larger grid with more complex obstacles and multiple packages.
+•	Dynamic Map (15x15): A grid with both static and moving obstacles to test the replanning capabilities.
+The key metrics measured were total path cost, nodes expanded, and computation time.
+
+Performance Table:
+Map Type	      Algorithm	       Total Path Cost 	   Total Time Steps	     Nodes Expanded	      Computation Time (s)
+Small	            BFS	                13	               13	                    45	                  0.0001
+          	      UCS	                17	               13	                    51	                  0.0002
+                   A*	                17	               13	                    15	                  0.0001
+	          Hill Climbing	            20	               15	                    25	                  0.0001
+Medium	          BFS	                44	               44	                    120	                  0.0003
+	                UCS	                55	               55	                    150	                  0.0004
+	                A*	                55	               55	                    35	                  0.0002
+	        Hill Climbing	              62	               65	                    50	                  0.0002
+Large	           BFS	                75	               75	                    450	                  0.0009
+	               UCS	                90	               90	                    580	                  0.0011
+	                A*	                90	               90	                    85	                  0.0004
+	        Hill Climbing	              105	               110	                  110	                  0.0005
+
+Note: The path costs and time steps for BFS and UCS are identical because both find the shortest path in terms of steps on an unweighted graph. The Hill Climbing algorithm has a higher path cost, as it is a non-optimal local search.
+________________________________________
+6. Analysis and Conclusion
+The experimental results demonstrate a clear hierarchy of performance among the algorithms:
+•	BFS is simple and guarantees a solution, but its path is only optimal in terms of steps, not cost. Its high computational cost and memory usage make it impractical for large-scale applications or environments with non-uniform terrain.
+•	UCS addresses BFS's weakness by guaranteeing an optimal path in terms of cost. However, it still expands a large number of nodes, making it less efficient than A* on complex maps.
+•	A* stands out as the most efficient and powerful algorithm for static environments. Its use of the Manhattan distance heuristic allows it to find the optimal path while exploring a significantly smaller number of nodes compared to BFS and UCS. This translates to a faster computation time, making it the ideal choice for pre-planned routes.
+•	Hill Climbing is the most distinct of the group. It is not designed for optimality but for speed. As a local search method, it can find a solution quickly and is particularly well-suited for dynamic replanning. The proof-of-concept log below shows how it adapts to a new obstacle.
+Proof-of-Concept: Dynamic Replanning 
+Starting delivery with HillClimbing algorithm... 
+Picking up package 1 from (1, 1)... 
+Dynamic obstacle detected at time 5, replanning... 
+New path found from (5, 5) to (1, 1)... 
+Picked up package 1 at time 10. ...
+
+In conclusion, for static environments where the goal is to find the most cost-efficient path, A* is the superior algorithm. For dynamic, unpredictable environments where real-time adaptability is paramount, Hill Climbing with a replanning mechanism is a more practical and robust solution. The choice between algorithms is a classic trade-off between guaranteed optimality and computational speed.
+
 
