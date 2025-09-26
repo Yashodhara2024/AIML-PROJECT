@@ -1,82 +1,113 @@
-Autonomous Delivery Agent Project
+# Autonomous Delivery Agent Project
 
-This project implements an autonomous delivery agent that navigates a 2D grid environment. The agent's core task is to efficiently deliver packages by planning optimal paths while contending with varying terrain costs and dynamic obstacles. The project serves as a comprehensive case study in artificial intelligence, covering uninformed, informed, and local search algorithms.
+This project implements an autonomous delivery agent navigating a 2D grid environment with static and dynamic obstacles, varying terrain costs, and multiple packages to deliver. The agent uses various search and planning algorithms to find optimal paths and demonstrates dynamic replanning in response to moving obstacles.
 
-Key Features 
-Modular Environment Model: A GridEnvironment class that supports static obstacles, dynamic (moving) obstacles, and variable terrain costs.
+## Features
 
-Intelligent Agent Design: A DeliveryAgent class that plans and executes paths, demonstrating rational decision-making. It also includes a robust dynamic replanning mechanism.
+- **Grid Environment Modeling:** Supports static obstacles, dynamic obstacles (with time-varying positions), and terrain costs.
+- **Pathfinding Algorithms:** Includes Breadth-First Search (BFS), Uniform Cost Search (UCS), A* Search, and Hill Climbing with Random Restarts.
+- **Autonomous Delivery Agent:** Plans and executes package deliveries, logs results, supports dynamic replanning in changing environments.
+- **Test Map Generation:** Provides small, medium, large, and dynamic environments for experimentation.
+- **Experimental Framework:** Compares algorithms on all maps and provides performance analysis and visualization.
+- **Demonstrations:** Animates agent movement and replanning under dynamic conditions.
+- **Command Line Interface (CLI):** Interactive CLI for running planners and experiments.
 
-Diverse Pathfinding Algorithms: The project provides implementations of several search algorithms for comparative analysis:
+## Requirements
 
-Uninformed Search: Breadth-First Search (BFS) and Uniform-Cost Search (UCS).
+- Python 3.6+
+- [NumPy](https://numpy.org/)
+- [matplotlib](https://matplotlib.org/)
+- [IPython](https://ipython.org/) (for display/animation in notebooks)
 
-Informed Search: A* with an admissible Manhattan distance heuristic.
-
-Local Search: Hill Climbing with Random Restarts, specifically for fast replanning.
-
-Automated Experiments: A framework to run experiments on four distinct test maps (small, medium, large, and dynamic) and analyze algorithm performance based on path cost, time, and nodes expanded.
-
-Proof-of-Concept: A built-in demonstration of dynamic replanning to show the agent's ability to adapt to sudden changes in the environment.
-
-Setup Instructions
-Follow these steps to set up and run the project.
-
-1. Prerequisites
-Make sure you have Python 3.6+ installed on your system. You will also need the following libraries:
-
-numpy for handling numerical data and the grid map.
-
-matplotlib for plotting and visualizing results.
-
-ipython for the animation demonstration.
-
-heapq (built-in) for priority queue implementations.
-
-You can install the required libraries using pip:
+Install dependencies via pip:
+```sh
 pip install numpy matplotlib ipython
+```
 
-2. Running the Project
-The project is designed to be run from the command line. Navigate to the project's directory and execute the main script:
-python main.py
+## File Structure
 
-Running this command will:
-Generate and visualize the four test maps.
-Run automated experiments on all maps, comparing the performance of BFS, UCS, A*, and Hill Climbing.
-Print detailed results for each algorithm and map combination.
-Display a plot summarizing the experimental data.
-Run a dynamic replanning demonstration to show the agent's reactive behavior.
+- All code is contained in a single `.py` file (see provided code).
+- No external data files required; all maps and scenarios are generated programmatically.
 
-3. Code Structure
-The source code is modular and well-documented for easy understanding:
+## How It Works
 
-main.py: The entry point of the application, orchestrating all functions.
+### Environment
 
-GridEnvironment: Defines the environment's properties and methods.
+The `GridEnvironment` class models the grid, obstacles, terrain costs, packages, and agent position. It supports visualization using `matplotlib`.
 
-SearchAlgorithm: The base class for all search algorithms.
+### Search Algorithms
 
-BFS, UniformCostSearch, AStarSearch, HillClimbingSearch: Implementations of each algorithm.
+Supported algorithms:
+- **BFS:** Finds the shortest path in terms of steps, ignores terrain cost.
+- **UCS:** Finds the least-cost path considering terrain.
+- **A\* Search:** Uses Manhattan distance as heuristic; optimal and efficient.
+- **Hill Climbing:** Fast local search with random restarts, suitable for dynamic replanning.
 
-DeliveryAgent: Contains the agent's logic for planning and executing deliveries.
+All algorithms inherit from a base class `SearchAlgorithm`.
 
-Helper functions (create_test_maps, run_experiments, analyze_results, etc.) are included to manage the automated testing and analysis framework.
+### Delivery Agent
 
-Grid File Format
-Although the test maps are programmatically generated for convenience and reproducibility, the underlying environment model supports a simple grid file format.
+The `DeliveryAgent` class plans and executes deliveries, adapts to dynamic obstacles, and logs details of the run. It supports replanning mid-delivery if obstacles change.
 
-A grid map can be represented as a text file where each number or character corresponds to a cell's terrain cost or obstacle status. For example:
+### Experiments & Analysis
 
-1 1 1 1 (low cost terrain)
+- `run_experiments()`: Runs all algorithms on all maps and stores results.
+- `analyze_results()`: Plots cost, computation time, success rates, and provides a summary table.
+- Demonstrations visualize agent behavior in the presence of moving obstacles.
 
-2 2 1 1 (mixed terrain)
+### CLI
+
+A command-line interface (`run_planner_cli()`) lets users:
+- Select map and algorithm to run.
+- Compare all algorithms on a map.
+- Run comprehensive experiments.
+- View dynamic replanning demonstrations.
+
+## Usage
+
+### 1. Run Full Demonstration
+
+```sh
+python autonomous_delivery_agent.py
+```
+Follow the on-screen prompts to choose between automated demonstration or CLI mode.
+
+### 2. Run via CLI
+
+Start the CLI and interactively select maps/algorithms:
+```sh
+python autonomous_delivery_agent.py
+```
+Choose "Interactive CLI mode" when prompted.
+
+### 3. In Jupyter Notebook
+
+Import the classes and run demonstrations visually:
+```python
+from autonomous_delivery_agent import *
+main()
+```
+
+## Example Outputs
+
+- Visualizations of the environment, agent paths, and obstacles.
+- Bar charts comparing algorithm performance.
+- Animated demonstrations of dynamic replanning.
+
+## Customization
+
+- **Maps:** Modify `create_test_maps()` to define new environments.
+- **Algorithms:** Extend `SearchAlgorithm` to add new planning methods.
+- **Agent Behavior:** Customize `DeliveryAgent` for more complex tasks or replanning policies.
+
+## Project Structure
+
+- `GridEnvironment`: Environment simulation, visualization.
+- `SearchAlgorithm`, `BFS`, `UCS`, `AStarSearch`, `HillClimbingSearch`: Pathfinding.
+- `DeliveryAgent`: Delivery logic, logging, replanning.
+- Experiments and analysis functions.
+- CLI for interactive usage.
 
 
-This format allows for the easy creation and sharing of new custom maps for additional testing.
 
-
-
-
-
-
-
+**Enjoy exploring autonomous path planning and delivery agent simulation!**
