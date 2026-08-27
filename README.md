@@ -12,15 +12,7 @@ This project implements an autonomous delivery agent navigating a 2D grid enviro
 - **Demonstrations:** Animates agent movement and replanning under dynamic conditions.
 - **Command Line Interface (CLI):** Interactive CLI for running planners and experiments.
 
-## Requirements
 
-- Python 3.6+
-- [NumPy](https://numpy.org/)
-- [matplotlib](https://matplotlib.org/)
-- [IPython](https://ipython.org/) (for display/animation in notebooks)
-
-Install dependencies via pip:
-```sh
 pip install numpy matplotlib ipython
 ```
 
