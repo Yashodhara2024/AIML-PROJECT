@@ -13,13 +13,7 @@ This project implements an autonomous delivery agent navigating a 2D grid enviro
 - **Command Line Interface (CLI):** Interactive CLI for running planners and experiments.
 
 
-pip install numpy matplotlib ipython
-```
 
-## File Structure
-
-- All code is contained in a single `.py` file (see provided code).
-- No external data files required; all maps and scenarios are generated programmatically.
 
 ## How It Works
 
