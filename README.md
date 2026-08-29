@@ -31,9 +31,7 @@ Supported algorithms:
 
 All algorithms inherit from a base class `SearchAlgorithm`.
 
-### Delivery Agent
 
-The `DeliveryAgent` class plans and executes deliveries, adapts to dynamic obstacles, and logs details of the run. It supports replanning mid-delivery if obstacles change.
 
 ### Experiments & Analysis
 
