@@ -13,14 +13,6 @@ This project implements an autonomous delivery agent navigating a 2D grid enviro
 - **Command Line Interface (CLI):** Interactive CLI for running planners and experiments.
 
 
-
-
-## How It Works
-
-### Environment
-
-The `GridEnvironment` class models the grid, obstacles, terrain costs, packages, and agent position. It supports visualization using `matplotlib`.
-
 ### Search Algorithms
 
 Supported algorithms:
