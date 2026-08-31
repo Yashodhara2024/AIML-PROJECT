@@ -39,12 +39,7 @@ A command-line interface (`run_planner_cli()`) lets users:
 - Run comprehensive experiments.
 - View dynamic replanning demonstrations.
 
-## Usage
 
-### 1. Run Full Demonstration
-
-```sh
-python autonomous_delivery_agent.py
 ```
 Follow the on-screen prompts to choose between automated demonstration or CLI mode.
 
