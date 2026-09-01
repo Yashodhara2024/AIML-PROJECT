@@ -40,11 +40,6 @@ A command-line interface (`run_planner_cli()`) lets users:
 - View dynamic replanning demonstrations.
 
 
-```
-Follow the on-screen prompts to choose between automated demonstration or CLI mode.
-
-
-Choose "Interactive CLI mode" when prompted.
 
 ### 3. In Jupyter Notebook
 
