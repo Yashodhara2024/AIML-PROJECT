@@ -43,12 +43,7 @@ A command-line interface (`run_planner_cli()`) lets users:
 ```
 Follow the on-screen prompts to choose between automated demonstration or CLI mode.
 
-### 2. Run via CLI
 
-Start the CLI and interactively select maps/algorithms:
-```sh
-python autonomous_delivery_agent.py
-```
 Choose "Interactive CLI mode" when prompted.
 
 ### 3. In Jupyter Notebook
