@@ -41,13 +41,8 @@ A command-line interface (`run_planner_cli()`) lets users:
 
 
 
-### 3. In Jupyter Notebook
 
-Import the classes and run demonstrations visually:
-```python
-from autonomous_delivery_agent import *
-main()
-```
+
 
 ## Example Outputs
 
