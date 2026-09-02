@@ -39,11 +39,6 @@ A command-line interface (`run_planner_cli()`) lets users:
 - Run comprehensive experiments.
 - View dynamic replanning demonstrations.
 
-
-
-
-
-
 ## Example Outputs
 
 - Visualizations of the environment, agent paths, and obstacles.
